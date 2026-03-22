@@ -225,13 +225,14 @@
 
   .empty { text-align: center; padding: 2rem; color: var(--muted); font-size: 14px; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
 <div id="screen-members" class="screen active">
   <div class="header">
     <div class="header-title">弓道部 的中記録</div>
-    <button class="btn btn-undo" onclick="showScreen('screen-ranking')" style="border-color:var(--border);color:var(--text)">ランキング →</button>
+    <div style="display:flex;gap:6px"><button class="btn btn-undo" onclick="showScreen('screen-qr')" style="border-color:var(--border);color:var(--muted);padding:8px 12px">QR</button><button class="btn btn-undo" onclick="showScreen('screen-ranking')" style="border-color:var(--border);color:var(--text)">ランキング →</button></div>
   </div>
   <div style="display:flex;gap:8px;margin-bottom:12px">
     <input id="new-member-input" type="text" placeholder="部員名を入力"
@@ -302,6 +303,18 @@
     <button class="tab" id="tab-today" onclick="switchRankTab('today')">本日</button>
   </div>
   <div id="ranking-list"></div>
+</div>
+
+<div id="screen-qr" class="screen">
+  <div class="header">
+    <button class="back-btn" onclick="showScreen('screen-members')">← 戻る</button>
+    <div class="header-title">QRコード</div>
+  </div>
+  <div class="card" style="text-align:center;padding:1.5rem">
+    <p class="muted" style="margin-bottom:1rem">このQRコードを部員に共有してください</p>
+    <div id="qr-container" style="display:inline-block;padding:12px;background:#fff;border-radius:12px;border:0.5px solid var(--border)"></div>
+    <p style="margin-top:1rem;font-size:12px;color:var(--muted);word-break:break-all">https://kojimaakihiroy0-cmyk.github.io/kyudo-record/</p>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -485,6 +498,7 @@ function showScreen(id) {
   document.getElementById(id).classList.add('active');
   if (id === 'screen-members') loadMembers();
   if (id === 'screen-ranking') loadRanking();
+  if (id === 'screen-qr') initQR();
 }
 
 function renderMembers() {
@@ -510,12 +524,36 @@ function renderMembers() {
   }).join('');
 }
 
-function selectMember(name) {
+async function selectMember(name) {
   currentMember = name;
-  groups = [[]];
   document.getElementById('rec-name').textContent = name + ' さん';
+  setSyncBadge('ing');
+
+  // スプレッドシートから今日のデータを復元
+  const todayS = calcStats(remoteCache, name, getToday());
+  if (todayS.total > 0) {
+    const hits = todayS.hits;
+    const total = todayS.total;
+    const restored = [];
+    for (let i = 0; i < hits; i++) restored.push(1);
+    for (let i = 0; i < total - hits; i++) restored.push(0);
+    groups = [[]];
+    restored.forEach(v => {
+      if (currentGroup().length >= 4) groups.push([]);
+      currentGroup().push(v);
+    });
+    if (currentGroup().length === 0 && groups.length > 1) {
+      // 末尾が空なのでそのままでOK
+    } else if (currentGroup().length > 0) {
+      groups.push([]);
+    }
+  } else {
+    groups = [[]];
+  }
+
   setSyncBadge('ok');
-  showScreen('screen-record');
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-record').classList.add('active');
   updateRecordUI();
 }
 
@@ -590,6 +628,18 @@ function updateRecordUI() {
       ${isComplete ? `<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>` : ''}
     </div>`;
   }).reverse().join('');
+}
+
+function initQR() {
+  var container = document.getElementById('qr-container');
+  container.innerHTML = '';
+  new QRCode(container, {
+    text: 'https://kojimaakihiroy0-cmyk.github.io/kyudo-record/',
+    width: 200,
+    height: 200,
+    colorDark: '#1a1a18',
+    colorLight: '#ffffff'
+  });
 }
 
 function endSession() {
