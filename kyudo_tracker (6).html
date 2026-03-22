@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>的中記録</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+  :root {
+    --green: #1D9E75;
+    --green-light: #E1F5EE;
+    --green-dark: #0F6E56;
+    --purple: #534AB7;
+    --purple-light: #EEEDFE;
+    --amber: #BA7517;
+    --red: #D85A30;
+    --gray: #888780;
+    --bg: #F7F6F3;
+    --card: #FFFFFF;
+    --border: rgba(0,0,0,0.08);
+    --text: #1a1a18;
+    --muted: #888780;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .screen { display: none; padding: 1rem; }
+  .screen.active { display: block; }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+  .header-title { font-size: 18px; font-weight: 700; }
+  .back-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 14px; color: var(--muted); padding: 4px 0;
+    font-family: inherit;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 12px;
+    border: 0.5px solid var(--border);
+  }
+
+  /* Metrics */
+  .metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .metric {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 10px 8px;
+    text-align: center;
+    border: 0.5px solid var(--border);
+  }
+  .metric-label { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+  .metric-value { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; }
+  .metric-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* Buttons */
+  .btn {
+    width: 100%; padding: 12px; border-radius: 12px;
+    border: 0.5px solid var(--border);
+    background: var(--card); color: var(--text);
+    font-size: 15px; cursor: pointer; margin-bottom: 8px;
+    font-family: inherit; font-weight: 500;
+    transition: opacity 0.1s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.98); opacity: 0.85; }
+
+  .btn-hit {
+    background: var(--green); border-color: var(--green-dark);
+    color: #fff; font-size: 28px; font-weight: 700;
+    padding: 28px; border-radius: 16px;
+  }
+  .btn-miss {
+    background: var(--card); border-color: var(--border);
+    font-size: 28px; font-weight: 700;
+    padding: 28px; border-radius: 16px; color: var(--text);
+  }
+  .btn-split {
+    border-color: var(--purple); color: var(--purple);
+    font-size: 13px; padding: 10px;
+  }
+  .btn-split:disabled { opacity: 0.3; cursor: default; }
+  .btn-undo {
+    border-color: var(--amber); color: var(--amber);
+    font-size: 13px; padding: 8px 12px;
+    width: auto; margin: 0;
+  }
+  .btn-undo:disabled { opacity: 0.3; cursor: default; }
+  .btn-danger { border-color: var(--red); color: var(--red); }
+  .btn-primary {
+    background: var(--text); color: var(--bg);
+    border-color: var(--text); font-weight: 700;
+  }
+
+  .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
+
+  /* Member list */
+  .member-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px; border-radius: 12px;
+    border: 0.5px solid var(--border);
+    background: var(--card); width: 100%;
+    cursor: pointer; margin-bottom: 8px;
+    font-family: inherit; text-align: left;
+    transition: background 0.1s;
+  }
+  .member-btn:active { background: var(--green-light); }
+  .avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--green-light);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: var(--green-dark);
+    flex-shrink: 0;
+  }
+  .member-name { font-size: 15px; font-weight: 500; color: var(--text); }
+  .member-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+  /* Arrow dots */
+  .dot {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; cursor: pointer; font-weight: 700;
+    transition: transform 0.1s;
+    flex-shrink: 0;
+  }
+  .dot:active { transform: scale(0.88); }
+  .dot-hit { background: var(--green-light); color: var(--green-dark); }
+  .dot-miss { background: #F1EFE8; color: var(--muted); }
+
+  /* Tachi group */
+  .tachi-group {
+    margin-bottom: 12px; padding-bottom: 12px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .tachi-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .tachi-header {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 6px;
+  }
+  .tachi-label { font-size: 13px; color: var(--muted); }
+  .tachi-status { font-size: 12px; }
+  .dots-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .progress-bar {
+    height: 4px; background: #F1EFE8;
+    border-radius: 2px; margin-top: 6px;
+  }
+  .progress-fill {
+    height: 100%; background: var(--green);
+    border-radius: 2px; transition: width 0.3s;
+  }
+
+  /* Ranking */
+  .rank-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 1rem; background: var(--card);
+    border-radius: 12px; border: 0.5px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .rank-num { font-size: 18px; font-weight: 700; min-width: 28px; color: var(--muted); }
+  .rank-num.gold { color: #BA7517; }
+  .rank-num.silver { color: #888780; }
+  .rank-num.bronze { color: #C07850; }
+  .rank-info { flex: 1; }
+  .rank-name { font-size: 15px; font-weight: 500; }
+  .rank-rate { font-size: 20px; font-weight: 700; }
+  .rank-sub { font-size: 12px; color: var(--muted); }
+
+  /* Tabs */
+  .tab-bar {
+    display: flex; border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+  }
+  .tab {
+    flex: 1; padding: 10px; text-align: center;
+    font-size: 14px; cursor: pointer; color: var(--muted);
+    border-bottom: 2px solid transparent; font-weight: 500;
+    font-family: inherit; background: none; border-top: none;
+    border-left: none; border-right: none;
+    transition: color 0.1s;
+  }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); }
+
+  .sep { height: 0.5px; background: var(--border); margin: 12px 0; }
+  .muted { font-size: 13px; color: var(--muted); }
+  h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--text); color: var(--bg);
+    padding: 10px 20px; border-radius: 20px; font-size: 13px;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    white-space: nowrap; z-index: 100;
+  }
+  .toast.show { opacity: 1; }
+
+  /* Sync status */
+  .sync-badge {
+    font-size: 11px; padding: 2px 8px; border-radius: 20px;
+    font-weight: 500;
+  }
+  .sync-ok { background: var(--green-light); color: var(--green-dark); }
+  .sync-err { background: #FAECE7; color: var(--red); }
+  .sync-ing { background: #F1EFE8; color: var(--muted); }
+
+  .empty { text-align: center; padding: 2rem; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div id="screen-members" class="screen active">
+  <div class="header">
+    <div class="header-title">弓道部 的中記録</div>
+    <button class="btn btn-undo" onclick="showScreen('screen-ranking')" style="border-color:var(--border);color:var(--text)">ランキング →</button>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <input id="new-member-input" type="text" placeholder="部員名を入力"
+      style="flex:1;padding:10px 14px;border-radius:12px;border:0.5px solid var(--border);background:var(--card);font-size:15px;font-family:inherit;color:var(--text);outline:none;"
+      onkeydown="if(event.key==='Enter')addMember()">
+    <button onclick="addMember()" style="width:auto;padding:10px 16px;background:var(--green);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;">追加</button>
+  </div>
+  <div id="member-list"></div>
+</div>
+
+<div id="screen-record" class="screen">
+  <div class="header">
+    <button class="back-btn" onclick="endSession()">← 戻る</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-weight:700;font-size:15px" id="rec-name"></span>
+      <span class="sync-badge sync-ok" id="sync-badge">同期済み</span>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">本日</div>
+      <div class="metric-value" id="r-today-rate">-</div>
+      <div class="metric-sub" id="r-today-sub">0/0本</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">今月</div>
+      <div class="metric-value" id="r-month-rate">-</div>
+      <div class="metric-sub" id="r-month-sub">0/0本</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">この立</div>
+      <div class="metric-value" id="r-tachi-pos">1本目</div>
+      <div class="metric-sub" id="r-tachi-hits">-</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="action-grid">
+      <button class="btn btn-hit" onclick="record(1)">中 ○</button>
+      <button class="btn btn-miss" onclick="record(0)">外 ×</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-split" id="split-btn" onclick="splitTachi()" disabled style="flex:1;margin:0">／ 立を区切る</button>
+      <button class="btn btn-undo" id="undo-btn" onclick="undoLast()" disabled>↩ 取り消し</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <h3 style="margin:0">記録</h3>
+      <span style="font-size:11px;color:var(--muted)">ドットをタップして修正</span>
+    </div>
+    <div id="history-area"></div>
+  </div>
+
+  <button class="btn btn-danger" onclick="endSession()">練習を終了する</button>
+</div>
+
+<div id="screen-ranking" class="screen">
+  <div class="header">
+    <button class="back-btn" onclick="showScreen('screen-members')">← 戻る</button>
+    <div class="header-title">ランキング</div>
+    <button class="btn btn-undo" onclick="loadRanking()" style="border-color:var(--border);color:var(--muted)">更新</button>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" id="tab-month" onclick="switchRankTab('month')">今月</button>
+    <button class="tab" id="tab-today" onclick="switchRankTab('today')">本日</button>
+  </div>
+  <div id="ranking-list"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwLDXEeP4uN_YnI_EIMC1-ittxOujwuD5buo52N1_efyJTwGgG9_Tl5plAXt_pBnlDL/exec';
+
+let membersCache = [];
+
+let currentMember = null;
+let groups = [[]];
+let syncTimer = null;
+let rankTab = 'month';
+let remoteCache = [];
+
+function getToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function getMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+function rateStr(hits, total) {
+  return total === 0 ? '-' : Math.round(hits / total * 100) + '%';
+}
+function allArrows() { return groups.flat(); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function setSyncBadge(state) {
+  const b = document.getElementById('sync-badge');
+  if (!b) return;
+  b.className = 'sync-badge';
+  if (state === 'ok') { b.classList.add('sync-ok'); b.textContent = '同期済み'; }
+  else if (state === 'err') { b.classList.add('sync-err'); b.textContent = '同期失敗'; }
+  else { b.classList.add('sync-ing'); b.textContent = '同期中...'; }
+}
+
+async function syncToSheet() {
+  const arr = allArrows();
+  if (arr.length === 0) return;
+  setSyncBadge('ing');
+  try {
+    const payload = {
+      date: getToday(),
+      name: currentMember,
+      hits: arr.filter(x => x).length,
+      total: arr.length
+    };
+    await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    setSyncBadge('ok');
+  } catch(e) {
+    setSyncBadge('err');
+  }
+}
+
+function schedulSync() {
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncToSheet, 1500);
+}
+
+async function loadMembers() {
+  try {
+    const res = await fetch(GAS_URL + '?type=members&t=' + Date.now());
+    membersCache = await res.json();
+  } catch(e) {}
+  renderMembers();
+}
+
+async function addMember() {
+  const input = document.getElementById('new-member-input');
+  const name = input.value.trim();
+  if (!name) return;
+  if (membersCache.includes(name)) { showToast('すでに登録されています'); return; }
+  input.value = '';
+  membersCache.push(name);
+  renderMembers();
+  showToast(name + ' を追加しました');
+  // no-corsなのでレスポンスは読めないが送信は試みる
+  fetch(GAS_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'member_add', name })
+  }).catch(() => {});
+}
+
+async function deleteMember(name) {
+  if (!confirm(`「${name}」を削除しますか？`)) return;
+  membersCache = membersCache.filter(m => m !== name);
+  renderMembers();
+  showToast(name + ' を削除しました');
+  fetch(GAS_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'member_delete', name })
+  }).catch(() => {});
+}
+
+async function loadRanking() {
+  const el = document.getElementById('ranking-list');
+  el.innerHTML = '<div class="empty">読み込み中...</div>';
+  try {
+    const res = await fetch(GAS_URL + '?t=' + Date.now());
+    const data = await res.json();
+    remoteCache = data;
+    renderRanking(rankTab);
+  } catch(e) {
+    el.innerHTML = '<div class="empty">読み込みに失敗しました</div>';
+  }
+}
+
+function calcStats(data, name, period) {
+  const rows = data.filter(r => r.name === name && String(r.date).startsWith(period));
+  if (rows.length === 0) return { hits: 0, total: 0 };
+  // 同じ日付は最大total（最後に同期した値）を使う
+  const byDate = {};
+  rows.forEach(r => {
+    const key = r.date;
+    if (!byDate[key] || Number(r.total) >= Number(byDate[key].total)) {
+      byDate[key] = r;
+    }
+  });
+  let hits = 0, total = 0;
+  Object.values(byDate).forEach(r => {
+    hits += Number(r.hits) || 0;
+    total += Number(r.total) || 0;
+  });
+  return { hits, total };
+}
+
+function renderRanking(tab) {
+  const period = tab === 'month' ? getMonth() : getToday();
+  const stats = membersCache.map(name => {
+    const s = calcStats(remoteCache, name, period);
+    return { name, ...s };
+  }).filter(s => s.total > 0).sort((a, b) => (b.hits/b.total) - (a.hits/a.total));
+
+  const el = document.getElementById('ranking-list');
+  if (stats.length === 0) {
+    el.innerHTML = '<div class="empty">まだ記録がありません</div>';
+    return;
+  }
+  el.innerHTML = stats.map((s, i) => {
+    const pct = Math.round(s.hits / s.total * 100);
+    const rankClass = i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    return `<div class="rank-card">
+      <div class="rank-num ${rankClass}">${i+1}</div>
+      <div class="avatar">${s.name.slice(0,2)}</div>
+      <div class="rank-info">
+        <div class="rank-name">${s.name}</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div style="text-align:right">
+        <div class="rank-rate">${pct}%</div>
+        <div class="rank-sub">${s.hits}/${s.total}本</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function switchRankTab(tab) {
+  rankTab = tab;
+  document.getElementById('tab-month').className = 'tab' + (tab==='month'?' active':'');
+  document.getElementById('tab-today').className = 'tab' + (tab==='today'?' active':'');
+  renderRanking(tab);
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'screen-members') loadMembers();
+  if (id === 'screen-ranking') loadRanking();
+}
+
+function renderMembers() {
+  const el = document.getElementById('member-list');
+  if (membersCache.length === 0) {
+    el.innerHTML = '<div class="empty">部員を追加してください</div>';
+    return;
+  }
+  el.innerHTML = membersCache.map(name => {
+    const s = calcStats(remoteCache, name, getToday());
+    const safeName = name.replace(/'/g, "\\'");
+    return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <button class="member-btn" onclick="selectMember('${safeName}')" style="flex:1;margin:0">
+        <div class="avatar">${name.slice(0,2)}</div>
+        <div style="flex:1">
+          <div class="member-name">${name}</div>
+          <div class="member-sub">本日 ${rateStr(s.hits,s.total)}　${s.hits}/${s.total}本</div>
+        </div>
+        <div style="color:var(--muted);font-size:18px">›</div>
+      </button>
+      <button onclick="deleteMember('${safeName}')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;padding:8px;flex-shrink:0" title="削除">×</button>
+    </div>`;
+  }).join('');
+}
+
+function selectMember(name) {
+  currentMember = name;
+  groups = [[]];
+  document.getElementById('rec-name').textContent = name + ' さん';
+  setSyncBadge('ok');
+  showScreen('screen-record');
+  updateRecordUI();
+}
+
+function currentGroup() { return groups[groups.length - 1]; }
+
+function record(hit) {
+  currentGroup().push(hit);
+  if (currentGroup().length >= 4) groups.push([]);
+  schedulSync();
+  updateRecordUI();
+}
+
+function splitTachi() {
+  if (currentGroup().length === 0) return;
+  groups.push([]);
+  updateRecordUI();
+}
+
+function undoLast() {
+  if (allArrows().length === 0) return;
+  if (currentGroup().length === 0) groups.pop();
+  currentGroup().pop();
+  if (groups.length > 1 && currentGroup().length === 0) groups.pop();
+  if (groups.length === 0) groups = [[]];
+  schedulSync();
+  updateRecordUI();
+}
+
+function toggleArrow(gi, ai) {
+  groups[gi][ai] ^= 1;
+  schedulSync();
+  updateRecordUI();
+}
+
+function updateRecordUI() {
+  const arr = allArrows();
+  const todayHits = arr.filter(x=>x).length;
+  const todayTotal = arr.length;
+  document.getElementById('r-today-rate').textContent = rateStr(todayHits, todayTotal);
+  document.getElementById('r-today-sub').textContent = `${todayHits}/${todayTotal}本`;
+
+  const monthS = calcStats(remoteCache, currentMember, getMonth());
+  document.getElementById('r-month-rate').textContent = rateStr(monthS.hits, monthS.total);
+  document.getElementById('r-month-sub').textContent = `${monthS.hits}/${monthS.total}本`;
+
+  const cg = currentGroup();
+  document.getElementById('r-tachi-pos').textContent = (cg.length + 1) + '本目';
+  document.getElementById('r-tachi-hits').textContent = cg.length > 0 ? `${cg.filter(x=>x).length}/${cg.length}中` : '-';
+
+  document.getElementById('undo-btn').disabled = arr.length === 0;
+  document.getElementById('split-btn').disabled = cg.length === 0;
+
+  const nonEmpty = groups.filter(g => g.length > 0);
+  const area = document.getElementById('history-area');
+  if (nonEmpty.length === 0) { area.innerHTML = '<p class="muted">まだ記録がありません</p>'; return; }
+
+  area.innerHTML = nonEmpty.map((g, gi) => {
+    const hits = g.filter(x=>x).length;
+    const total = g.length;
+    const pct = Math.round(hits/total*100);
+    const isComplete = total === 4;
+    const globalGi = groups.indexOf(g);
+    const dots = g.map((v, ai) =>
+      `<div class="dot ${v?'dot-hit':'dot-miss'}" onclick="toggleArrow(${globalGi},${ai})">${v?'○':'×'}</div>`
+    ).join('');
+    return `<div class="tachi-group">
+      <div class="tachi-header">
+        <span class="tachi-label">第${gi+1}立　${hits}/${total}中</span>
+        <span class="tachi-status" style="color:${isComplete?'var(--muted)':'var(--purple)'}">${isComplete?pct+'%':'入力中'}</span>
+      </div>
+      <div class="dots-row">${dots}</div>
+      ${isComplete ? `<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>` : ''}
+    </div>`;
+  }).reverse().join('');
+}
+
+function endSession() {
+  currentMember = null;
+  groups = [[]];
+  showScreen('screen-members');
+}
+
+// 起動時にデータ読み込み
+(async () => {
+  try {
+    const [membersRes, recordsRes] = await Promise.all([
+      fetch(GAS_URL + '?type=members&t=' + Date.now()),
+      fetch(GAS_URL + '?t=' + Date.now())
+    ]);
+    membersCache = await membersRes.json();
+    remoteCache = await recordsRes.json();
+  } catch(e) {}
+  renderMembers();
+})();
+</script>
+</body>
+</html>
